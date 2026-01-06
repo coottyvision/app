@@ -6,334 +6,318 @@
     <title>Coottyvision Delivery</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://unpkg.com/lucide@latest"></script>
-    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;800&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;700;800&display=swap" rel="stylesheet">
     <style>
-        body { font-family: 'Outfit', sans-serif; -webkit-tap-highlight-color: transparent; }
-        .app-container { max-width: 480px; margin: 0 auto; background-color: #f8fafc; min-height: 100vh; position: relative; }
-        .card-order { transition: transform 0.2s ease; }
+        body { font-family: 'Outfit', sans-serif; -webkit-tap-highlight-color: transparent; background-color: #f1f5f9; }
+        .app-frame { max-width: 480px; margin: 0 auto; background-color: #ffffff; min-height: 100vh; position: relative; box-shadow: 0 0 20px rgba(0,0,0,0.05); }
+        .card-order { transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1); }
         .card-order:active { transform: scale(0.98); }
-        .btn-swipe { background: linear-gradient(135deg, #10b981 0%, #059669 100%); }
-        .slide-in { animation: slideUp 0.3s ease-out; }
-        @keyframes slideUp { from { transform: translateY(20px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
-        .status-badge { @apply px-2 py-0.5 rounded-md text-[10px] font-bold uppercase tracking-wider; }
-        .status-shipped { @apply bg-purple-100 text-purple-700 border border-purple-200; }
-        .status-processing { @apply bg-blue-100 text-blue-700 border border-blue-200; }
+        .slide-up { animation: slideUp 0.4s cubic-bezier(0.16, 1, 0.3, 1); }
+        @keyframes slideUp { from { transform: translateY(100%); } to { transform: translateY(0); } }
         .no-scrollbar::-webkit-scrollbar { display: none; }
         .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
-        /* Loader */
-        .loader-spin { animation: spin 1s linear infinite; }
-        @keyframes spin { 100% { transform: rotate(360deg); } }
+        .map-overlay { background: linear-gradient(to top, rgba(255,255,255,1) 0%, rgba(255,255,255,0) 100%); }
     </style>
 </head>
-<body class="bg-slate-100 text-slate-800">
+<body>
 
-    <div class="app-container shadow-2xl overflow-hidden flex flex-col relative">
+    <div class="app-frame flex flex-col overflow-hidden">
         
-        <!-- PANTALLA DE CARGA (NUEVO) -->
-        <div id="view-loading" class="fixed inset-0 z-[60] bg-slate-900 flex flex-col items-center justify-center app-container">
-            <div class="w-16 h-16 bg-teal-500/20 rounded-full flex items-center justify-center mb-4">
-                <i data-lucide="loader-2" class="w-8 h-8 text-teal-500 loader-spin"></i>
+        <div id="view-loading" class="fixed inset-0 z-[60] bg-slate-900 flex flex-col items-center justify-center app-frame">
+            <div class="w-16 h-16 bg-teal-500/20 rounded-full flex items-center justify-center mb-4 relative">
+                <i data-lucide="loader-2" class="w-8 h-8 text-teal-400 animate-spin"></i>
+                <div class="absolute inset-0 border-4 border-teal-500/30 rounded-full animate-pulse"></div>
             </div>
-            <p class="text-slate-400 text-sm font-medium animate-pulse">Conectando...</p>
+            <p class="text-slate-400 text-sm font-medium tracking-wide">Iniciando sistema...</p>
         </div>
 
-        <!-- 1. LOGIN SCREEN -->
-        <div id="view-login" class="fixed inset-0 z-50 bg-slate-900 flex flex-col items-center justify-center p-8 app-container hidden">
-            <div class="w-20 h-20 bg-teal-500 rounded-2xl flex items-center justify-center mb-6 shadow-xl shadow-teal-500/30">
-                <i data-lucide="truck" class="w-10 h-10 text-white"></i>
+        <div id="view-login" class="fixed inset-0 z-50 bg-slate-900 flex flex-col p-8 app-frame hidden">
+            <div class="flex-1 flex flex-col justify-center">
+                <div class="w-20 h-20 bg-gradient-to-tr from-teal-500 to-emerald-400 rounded-3xl flex items-center justify-center mb-8 shadow-2xl shadow-teal-500/20">
+                    <i data-lucide="navigation" class="w-10 h-10 text-white"></i>
+                </div>
+                <h1 class="text-4xl font-extrabold text-white mb-2 tracking-tight">Cootty<br><span class="text-teal-400">Driver</span></h1>
+                <p class="text-slate-400 text-lg mb-10">Tu ruta, simplificada.</p>
+                <form id="login-form" class="space-y-4">
+                    <div class="space-y-1">
+                        <label class="text-xs font-bold text-slate-500 uppercase ml-1">Email</label>
+                        <input type="email" id="login-email" class="w-full bg-slate-800 border border-slate-700 rounded-2xl px-5 py-4 text-white focus:ring-2 focus:ring-teal-500 outline-none transition-all font-medium" placeholder="driver@cootty.com">
+                    </div>
+                    <div class="space-y-1">
+                        <label class="text-xs font-bold text-slate-500 uppercase ml-1">Contraseña</label>
+                        <input type="password" id="login-pass" class="w-full bg-slate-800 border border-slate-700 rounded-2xl px-5 py-4 text-white focus:ring-2 focus:ring-teal-500 outline-none transition-all font-medium" placeholder="••••••">
+                    </div>
+                    <button type="submit" class="w-full bg-teal-500 hover:bg-teal-600 text-white font-bold py-4 rounded-2xl shadow-lg shadow-teal-500/20 active:scale-95 transition-transform mt-4 text-lg">Iniciar Turno</button>
+                </form>
             </div>
-            <h1 class="text-3xl font-bold text-white mb-1">Delivery App</h1>
-            <p class="text-slate-400 mb-8 text-sm">Acceso exclusivo repartidores</p>
-            
-            <form id="login-form" class="w-full space-y-4">
-                <input type="email" id="login-email" class="w-full bg-slate-800 border border-slate-700 rounded-xl px-4 py-4 text-white placeholder-slate-500 focus:ring-2 focus:ring-teal-500 outline-none transition-all" placeholder="repartidor@cootty.com">
-                <input type="password" id="login-pass" class="w-full bg-slate-800 border border-slate-700 rounded-xl px-4 py-4 text-white placeholder-slate-500 focus:ring-2 focus:ring-teal-500 outline-none transition-all" placeholder="••••••">
-                <button type="submit" class="w-full bg-teal-500 hover:bg-teal-600 text-white font-bold py-4 rounded-xl shadow-lg shadow-teal-500/20 active:scale-95 transition-transform">Ingresar</button>
-            </form>
+            <p class="text-center text-slate-600 text-xs">v3.5.0 Stable</p>
         </div>
 
-        <!-- 2. MAIN APP -->
-        <div id="view-app" class="hidden flex-1 flex flex-col h-full bg-slate-50">
+        <div id="view-app" class="hidden flex-1 flex flex-col h-full bg-slate-50 relative">
             
-            <!-- Header -->
-            <header class="bg-white px-6 py-4 flex justify-between items-center border-b border-slate-100 sticky top-0 z-10 shadow-sm">
+            <header class="bg-white px-6 py-4 flex justify-between items-center sticky top-0 z-20 shadow-[0_2px_15px_-3px_rgba(0,0,0,0.07)]">
                 <div>
-                    <h2 class="text-xl font-bold text-slate-800">Ruta de Hoy</h2>
-                    <p class="text-xs text-slate-500" id="pending-count">Sincronizando...</p>
+                    <h2 class="text-xl font-extrabold text-slate-800 tracking-tight">Ruta del Día</h2>
+                    <p class="text-xs font-medium text-slate-500 flex items-center gap-1"><span class="w-2 h-2 rounded-full bg-green-500 animate-pulse"></span> <span id="pending-count">Sincronizando...</span></p>
                 </div>
-                <div class="w-10 h-10 rounded-full bg-slate-100 flex items-center justify-center border border-slate-200">
-                    <i data-lucide="user" class="w-5 h-5 text-slate-600"></i>
-                </div>
+                <button onclick="logout()" class="w-10 h-10 rounded-full bg-slate-50 hover:bg-red-50 flex items-center justify-center border border-slate-200 transition-colors group">
+                    <i data-lucide="power" class="w-5 h-5 text-slate-400 group-hover:text-red-500"></i>
+                </button>
             </header>
 
-            <!-- Tabs -->
-            <div class="px-4 py-3 flex gap-2 overflow-x-auto no-scrollbar bg-white border-b border-slate-50">
-                <button onclick="filterList('all')" id="tab-all" class="flex-1 bg-slate-900 text-white py-2 px-4 rounded-lg text-xs font-bold shadow-md transition-colors">Todos</button>
-                <button onclick="filterList('shipped')" id="tab-shipped" class="flex-1 bg-white text-slate-500 border border-slate-200 py-2 px-4 rounded-lg text-xs font-bold hover:bg-slate-50 transition-colors">En Ruta</button>
-                <button onclick="filterList('processing')" id="tab-processing" class="flex-1 bg-white text-slate-500 border border-slate-200 py-2 px-4 rounded-lg text-xs font-bold hover:bg-slate-50 transition-colors">En Taller</button>
-            </div>
-
-            <!-- Orders List -->
-            <div id="orders-container" class="flex-1 overflow-y-auto p-4 space-y-4 pb-24 no-scrollbar">
-                <!-- Estado Inicial -->
-                <div class="flex flex-col items-center justify-center h-40 text-slate-400">
-                    <i data-lucide="loader-2" class="w-6 h-6 animate-spin mb-2"></i>
-                    <p class="text-xs">Buscando pedidos...</p>
+            <div class="bg-white border-b border-slate-100 py-3 px-4">
+                <div class="flex gap-2 overflow-x-auto no-scrollbar" id="district-filters">
+                    <button class="bg-slate-900 text-white px-4 py-1.5 rounded-full text-xs font-bold whitespace-nowrap">Todos</button>
                 </div>
             </div>
 
-            <!-- Bottom Nav -->
-            <nav class="bg-white border-t border-slate-200 px-8 py-3 flex justify-between items-center absolute bottom-0 w-full shadow-[0_-5px_15px_rgba(0,0,0,0.05)]">
-                <button class="flex flex-col items-center gap-1 text-teal-600">
-                    <i data-lucide="map" class="w-6 h-6"></i>
-                    <span class="text-[10px] font-bold">Ruta</span>
-                </button>
-                <button onclick="window.location.reload()" class="bg-slate-900 p-4 rounded-full -mt-10 shadow-xl border-4 border-slate-50 text-white active:scale-90 transition-transform hover:bg-slate-800">
-                    <i data-lucide="refresh-cw" class="w-6 h-6"></i>
-                </button>
-                <button onclick="logout()" class="flex flex-col items-center gap-1 text-slate-400 hover:text-red-500 transition-colors">
-                    <i data-lucide="log-out" class="w-6 h-6"></i>
-                    <span class="text-[10px] font-bold">Salir</span>
-                </button>
-            </nav>
+            <div id="orders-container" class="flex-1 overflow-y-auto p-4 space-y-3 pb-24 no-scrollbar">
+                <div class="flex flex-col items-center justify-center h-64 text-slate-300">
+                    <i data-lucide="map" class="w-12 h-12 mb-3 opacity-20"></i>
+                    <p class="text-sm font-medium">Buscando entregas...</p>
+                </div>
+            </div>
+
+            <div class="absolute bottom-0 w-full bg-white border-t border-slate-100 p-4 pb-6 shadow-[0_-10px_40px_rgba(0,0,0,0.05)] z-20 flex justify-between items-center">
+                <div class="flex items-center gap-3">
+                    <div class="bg-teal-50 p-2.5 rounded-xl text-teal-600"><i data-lucide="check-circle-2" class="w-6 h-6"></i></div>
+                    <div>
+                        <p class="text-xs font-bold text-slate-400 uppercase tracking-wider">Completados</p>
+                        <p class="text-lg font-extrabold text-slate-800 leading-none" id="stats-completed">0</p>
+                    </div>
+                </div>
+                <button onclick="window.location.reload()" class="bg-slate-900 p-3 rounded-full text-white shadow-lg active:rotate-180 transition-transform"><i data-lucide="refresh-cw" class="w-5 h-5"></i></button>
+            </div>
         </div>
 
-        <!-- 3. DELIVERY MODAL -->
-        <div id="modal-delivery" class="fixed inset-0 z-50 hidden bg-slate-900/90 backdrop-blur-sm flex items-end sm:items-center justify-center">
-            <div class="bg-white w-full max-w-md rounded-t-3xl sm:rounded-3xl p-6 relative animate-slide-up shadow-2xl">
-                <button onclick="closeModal()" class="absolute top-4 right-4 p-2 bg-slate-100 rounded-full hover:bg-slate-200 transition-colors"><i data-lucide="x" class="w-5 h-5 text-slate-500"></i></button>
+        <div id="modal-delivery" class="fixed inset-0 z-50 hidden bg-slate-900/90 backdrop-blur-md flex items-end sm:items-center justify-center p-0 sm:p-4">
+            <div class="bg-white w-full max-w-md rounded-t-3xl sm:rounded-3xl relative slide-up shadow-2xl overflow-hidden flex flex-col max-h-[95vh]">
                 
-                <div class="text-center mb-6 pt-2">
-                    <span id="d-id" class="text-xs font-mono bg-slate-100 px-2 py-1 rounded text-slate-500 font-bold">#00000</span>
-                    <h3 id="d-name" class="text-2xl font-bold text-slate-800 mt-3 mb-1">Cliente</h3>
-                    <p class="text-teal-600 font-bold text-xl">S/<span id="d-total">0.00</span></p>
+                <div class="h-48 bg-slate-200 relative group">
+                    <iframe id="d-map-frame" class="w-full h-full object-cover opacity-80 group-hover:opacity-100 transition-opacity" frameborder="0" style="border:0" allowfullscreen></iframe>
+                    <div class="absolute inset-0 pointer-events-none map-overlay"></div>
+                    <button onclick="closeModal()" class="absolute top-4 right-4 bg-white/90 backdrop-blur p-2 rounded-full shadow-sm hover:bg-white transition-all z-10"><i data-lucide="x" class="w-5 h-5 text-slate-600"></i></button>
+                    <div class="absolute bottom-4 left-6 z-10">
+                        <span class="bg-slate-900 text-white text-[10px] font-bold px-2 py-1 rounded-md uppercase tracking-wider mb-1 inline-block" id="d-dist">Distrito</span>
+                        <h2 class="text-2xl font-extrabold text-slate-900 leading-none" id="d-name">Cliente</h2>
+                    </div>
                 </div>
 
-                <div class="bg-slate-50 rounded-2xl p-5 mb-6 border border-slate-100">
-                    <h4 class="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-3">Detalle del Pedido</h4>
-                    <div id="d-items" class="space-y-3 text-sm max-h-40 overflow-y-auto pr-1"></div>
+                <div class="p-6 overflow-y-auto no-scrollbar space-y-6 bg-white flex-1">
+                    
+                    <div class="flex gap-4">
+                        <div class="mt-1"><div class="w-8 h-8 rounded-full bg-teal-50 flex items-center justify-center text-teal-600"><i data-lucide="map-pin" class="w-4 h-4"></i></div></div>
+                        <div class="flex-1">
+                            <p class="text-sm font-medium text-slate-500">Dirección de entrega</p>
+                            <p class="text-base font-bold text-slate-800 leading-snug mt-0.5" id="d-address">...</p>
+                            <p class="text-xs text-slate-400 mt-1 italic" id="d-ref">...</p>
+                        </div>
+                        <button onclick="openGPS()" class="h-10 px-4 bg-slate-100 hover:bg-slate-200 rounded-xl font-bold text-xs text-slate-700 transition-colors">GPS</button>
+                    </div>
+
+                    <div class="grid grid-cols-2 gap-3">
+                        <button onclick="contact('wsp')" class="flex items-center justify-center gap-2 bg-green-500 hover:bg-green-600 text-white py-3 rounded-xl font-bold transition-all shadow-lg shadow-green-500/20 active:scale-95">
+                            <i data-lucide="message-circle" class="w-5 h-5"></i> WhatsApp
+                        </button>
+                        <button onclick="contact('call')" class="flex items-center justify-center gap-2 bg-slate-100 hover:bg-slate-200 text-slate-700 py-3 rounded-xl font-bold transition-all active:scale-95">
+                            <i data-lucide="phone" class="w-5 h-5"></i> Llamar
+                        </button>
+                    </div>
+
+                    <div class="bg-slate-50 rounded-2xl p-4 border border-slate-100">
+                        <div class="flex justify-between items-center mb-3">
+                            <span class="text-xs font-bold text-slate-400 uppercase">Pedido</span>
+                            <span class="text-xs font-mono font-bold text-slate-400" id="d-id">#ID</span>
+                        </div>
+                        <div id="d-items" class="space-y-2 mb-4 border-b border-slate-200 pb-4"></div>
+                        <div class="flex justify-between items-center">
+                            <span class="text-sm font-bold text-slate-700">Total a Cobrar</span>
+                            <span class="text-xl font-extrabold text-slate-900">S/<span id="d-total">0.00</span></span>
+                        </div>
+                    </div>
+
+                    <div class="space-y-3 pt-2">
+                        <button id="btn-photo" onclick="triggerCamera()" class="w-full border-2 border-dashed border-slate-300 text-slate-500 py-3 rounded-xl font-bold text-sm hover:border-teal-500 hover:text-teal-600 transition-colors flex items-center justify-center gap-2">
+                            <i data-lucide="camera" class="w-5 h-5"></i> <span id="photo-text">Adjuntar Foto de Entrega</span>
+                        </button>
+                        <input type="file" id="file-input" accept="image/*" capture="environment" class="hidden" onchange="photoTaken()">
+
+                        <div class="grid grid-cols-4 gap-3">
+                            <button onclick="toggleIssueMenu()" class="col-span-1 bg-red-50 text-red-500 rounded-xl flex items-center justify-center hover:bg-red-100 transition-colors">
+                                <i data-lucide="alert-triangle" class="w-6 h-6"></i>
+                            </button>
+                            <button onclick="completeOrder()" id="btn-complete" class="col-span-3 bg-slate-900 text-white py-4 rounded-xl font-bold text-lg shadow-xl shadow-slate-900/20 active:scale-95 transition-transform flex items-center justify-center gap-2">
+                                Confirmar Entrega <i data-lucide="check" class="w-5 h-5"></i>
+                            </button>
+                        </div>
+                    </div>
                 </div>
 
-                <div class="grid grid-cols-2 gap-3 mb-4">
-                    <button onclick="contactClient('wsp')" class="flex items-center justify-center gap-2 bg-green-100 hover:bg-green-200 text-green-700 py-3.5 rounded-xl font-bold active:scale-95 transition-all">
-                        <i data-lucide="message-circle" class="w-5 h-5"></i> WhatsApp
-                    </button>
-                    <button onclick="contactClient('call')" class="flex items-center justify-center gap-2 bg-blue-100 hover:bg-blue-200 text-blue-700 py-3.5 rounded-xl font-bold active:scale-95 transition-all">
-                        <i data-lucide="phone" class="w-5 h-5"></i> Llamar
-                    </button>
+                <div id="issue-menu" class="absolute inset-0 bg-white z-20 transform translate-y-full transition-transform duration-300 flex flex-col p-6">
+                    <div class="flex justify-between items-center mb-6">
+                        <h3 class="text-xl font-bold text-slate-900">Reportar Problema</h3>
+                        <button onclick="toggleIssueMenu()" class="p-2 bg-slate-100 rounded-full"><i data-lucide="x" class="w-5 h-5"></i></button>
+                    </div>
+                    <div class="space-y-3 flex-1">
+                        <button onclick="reportIssue('client_absent')" class="w-full p-4 text-left bg-slate-50 hover:bg-red-50 rounded-xl font-bold text-slate-700 hover:text-red-600 border border-slate-100 transition-colors">🏠 Cliente no está / No contesta</button>
+                        <button onclick="reportIssue('wrong_address')" class="w-full p-4 text-left bg-slate-50 hover:bg-red-50 rounded-xl font-bold text-slate-700 hover:text-red-600 border border-slate-100 transition-colors">📍 Dirección incorrecta</button>
+                        <button onclick="reportIssue('refused')" class="w-full p-4 text-left bg-slate-50 hover:bg-red-50 rounded-xl font-bold text-slate-700 hover:text-red-600 border border-slate-100 transition-colors">⛔ Pedido rechazado</button>
+                    </div>
                 </div>
-
-                <button onclick="confirmDelivery()" id="btn-confirm" class="w-full btn-swipe text-white py-4 rounded-xl font-bold text-lg shadow-lg shadow-green-500/30 flex items-center justify-center gap-2 active:scale-95 transition-all">
-                    <i data-lucide="check-circle" class="w-6 h-6"></i> Confirmar Entrega
-                </button>
             </div>
         </div>
 
     </div>
 
-    <!-- Scripts -->
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
         import { getAuth, signInWithEmailAndPassword, signOut, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
-        import { getFirestore, collection, onSnapshot, doc, updateDoc } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+        import { getFirestore, collection, onSnapshot, doc, updateDoc, query, where } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
 
-        // TUS CREDENCIALES
-        const firebaseConfig = {
-            apiKey: "AIzaSyCWCM5aXMS8OgcJ5vEES6WV17Hhymfngyw",
-            authDomain: "coottyvision-hd.firebaseapp.com",
-            projectId: "coottyvision-hd",
-            storageBucket: "coottyvision-hd.firebasestorage.app",
-            messagingSenderId: "204138808996",
-            appId: "1:204138808996:web:ff65a968cd5853d52e0831"
-        };
+        const firebaseConfig = { apiKey: "AIzaSyCWCM5aXMS8OgcJ5vEES6WV17Hhymfngyw", authDomain: "coottyvision-hd.firebaseapp.com", projectId: "coottyvision-hd", storageBucket: "coottyvision-hd.firebasestorage.app", messagingSenderId: "204138808996", appId: "1:204138808996:web:ff65a968cd5853d52e0831" };
+        const app = initializeApp(firebaseConfig); const auth = getAuth(app); const db = getFirestore(app);
 
-        const app = initializeApp(firebaseConfig);
-        const auth = getAuth(app);
-        const db = getFirestore(app);
+        let activeOrders = []; let selectedOrder = null; let hasPhoto = false; let filterDistrict = 'Todos';
 
-        let activeOrders = [];
-        let currentFilter = 'all';
-        let selectedOrder = null;
-
-        // --- AUTH LOGIC (ROBUSTO) ---
         onAuthStateChanged(auth, user => {
-            // Ocultar loader siempre que haya respuesta de Auth
             document.getElementById('view-loading').classList.add('hidden');
-            
-            if(user) {
-                document.getElementById('view-login').classList.add('hidden');
-                document.getElementById('view-app').classList.remove('hidden');
-                initOrdersListener();
-            } else {
-                document.getElementById('view-login').classList.remove('hidden');
-                document.getElementById('view-app').classList.add('hidden');
-            }
+            if(user) { document.getElementById('view-login').classList.add('hidden'); document.getElementById('view-app').classList.remove('hidden'); initListener(); } 
+            else { document.getElementById('view-login').classList.remove('hidden'); document.getElementById('view-app').classList.add('hidden'); }
         });
 
-        document.getElementById('login-form').addEventListener('submit', async (e) => {
-            e.preventDefault();
-            const btn = e.target.querySelector('button');
-            const originalText = btn.innerText;
-            btn.innerText = "Entrando..."; btn.disabled = true;
-            
-            try { 
-                await signInWithEmailAndPassword(auth, document.getElementById('login-email').value, document.getElementById('login-pass').value); 
-            } catch(e) { 
-                alert("Error: Revisa tu correo o contraseña");
-                btn.innerText = originalText; btn.disabled = false;
-            }
-        });
-
+        document.getElementById('login-form').addEventListener('submit', async (e) => { e.preventDefault(); const btn = e.target.querySelector('button'); const txt = btn.innerText; btn.innerText="Verificando..."; btn.disabled=true; try { await signInWithEmailAndPassword(auth, document.getElementById('login-email').value, document.getElementById('login-pass').value); } catch(e) { alert("Acceso denegado"); btn.innerText=txt; btn.disabled=false; } });
         window.logout = () => signOut(auth);
 
-        // --- DATA LOGIC ---
-        function initOrdersListener() {
-            // Escuchar pedidos en tiempo real
-            onSnapshot(collection(db, 'orders'), (snapshot) => {
-                const all = snapshot.docs.map(d => ({id: d.id, ...d.data()}));
-                // Filtrar solo los relevantes para el repartidor
-                activeOrders = all.filter(o => o.status === 'processing' || o.status === 'shipped');
-                // Re-aplicar filtro actual
-                window.filterList(currentFilter);
-            }, (error) => {
-                console.error("Error BD:", error);
-                document.getElementById('orders-container').innerHTML = `<div class="flex flex-col items-center justify-center h-64 text-red-400"><i data-lucide="wifi-off" class="w-8 h-8 mb-2"></i><p class="text-xs">Error de conexión</p></div>`;
-                lucide.createIcons();
+        function initListener() {
+            // Escuchar pedidos 'shipped' (En Ruta) y 'processing' (En Taller/Pendientes)
+            const q = query(collection(db, 'orders'));
+            onSnapshot(q, (snap) => {
+                const all = snap.docs.map(d => ({id: d.id, ...d.data()}));
+                // Filtrar lo que le interesa al driver
+                activeOrders = all.filter(o => ['shipped', 'processing'].includes(o.status));
+                // Calcular stats
+                const completed = all.filter(o => o.status === 'completed' && isToday(o.deliveredAt)).length;
+                document.getElementById('stats-completed').innerText = completed;
+                
+                renderFilters();
+                renderList();
             });
         }
+        
+        function isToday(isoDate) { if(!isoDate) return false; const d = new Date(isoDate); const today = new Date(); return d.getDate() === today.getDate() && d.getMonth() === today.getMonth(); }
 
-        window.filterList = (filter) => {
-            currentFilter = filter;
-            
-            // Actualizar botones visualmente
-            ['all', 'shipped', 'processing'].forEach(f => {
-                const btn = document.getElementById(`tab-${f}`);
-                if(f === filter) {
-                    btn.className = "flex-1 bg-slate-900 text-white py-2 px-4 rounded-lg text-xs font-bold shadow-md transition-colors";
-                } else {
-                    btn.className = "flex-1 bg-white text-slate-500 border border-slate-200 py-2 px-4 rounded-lg text-xs font-bold hover:bg-slate-50 transition-colors";
-                }
+        function renderFilters() {
+            const districts = ['Todos', ...new Set(activeOrders.map(o => (typeof o.customer === 'object' ? o.customer.district : 'General') || 'General'))];
+            const container = document.getElementById('district-filters');
+            container.innerHTML = districts.map(d => `<button onclick="setFilter('${d}')" class="${d === filterDistrict ? 'bg-slate-900 text-white shadow-md' : 'bg-white text-slate-600 border border-slate-200'} px-4 py-1.5 rounded-full text-xs font-bold whitespace-nowrap transition-all">${d}</button>`).join('');
+        }
+
+        window.setFilter = (d) => { filterDistrict = d; renderFilters(); renderList(); };
+
+        function renderList() {
+            const container = document.getElementById('orders-container');
+            let filtered = filterDistrict === 'Todos' ? activeOrders : activeOrders.filter(o => {
+                const d = typeof o.customer === 'object' ? o.customer.district : 'General';
+                return (d || 'General') === filterDistrict;
             });
 
-            const filtered = filter === 'all' ? activeOrders : activeOrders.filter(o => o.status === filter);
-            renderList(filtered);
-        };
+            document.getElementById('pending-count').innerText = `${filtered.length} Pendientes`;
 
-        function renderList(orders) {
-            const container = document.getElementById('orders-container');
-            document.getElementById('pending-count').innerText = `${orders.length} Entregas activas`;
-            
-            if(orders.length === 0) {
-                container.innerHTML = `
-                    <div class="flex flex-col items-center justify-center h-full text-slate-400 mt-20 fade-in">
-                        <div class="bg-white p-4 rounded-full shadow-sm mb-4 border border-slate-100">
-                            <i data-lucide="check-circle" class="w-10 h-10 text-green-500"></i>
-                        </div>
-                        <p class="text-sm font-bold text-slate-600">¡Todo listo!</p>
-                        <p class="text-xs">No hay pedidos pendientes en esta categoría.</p>
-                    </div>`;
-                lucide.createIcons();
-                return;
-            }
+            if(filtered.length === 0) { container.innerHTML = `<div class="flex flex-col items-center justify-center h-64 text-slate-300"><i data-lucide="check-circle" class="w-12 h-12 mb-3 opacity-20"></i><p class="text-sm font-medium">Zona limpia</p></div>`; lucide.createIcons(); return; }
 
-            container.innerHTML = orders.map(o => {
-                const isShipped = o.status === 'shipped';
-                const badgeClass = isShipped ? 'status-shipped' : 'status-processing';
-                const badgeIcon = isShipped ? 'truck' : 'package';
-                const badgeText = isShipped ? 'En Ruta' : 'En Taller';
-                const displayId = o.orderId || '#' + o.id.slice(0,5).toUpperCase();
+            container.innerHTML = filtered.map(o => {
+                const isNew = typeof o.customer === 'object';
+                const name = isNew ? o.customer.name : o.customer;
+                const district = isNew ? (o.customer.district || 'General') : 'General';
+                const address = isNew ? o.customer.address : 'Ver detalle';
+                const statusColor = o.status === 'shipped' ? 'bg-purple-100 text-purple-700' : 'bg-blue-50 text-blue-600';
+                const statusText = o.status === 'shipped' ? 'EN RUTA' : 'EN TALLER';
 
                 return `
-                <div onclick="openOrder('${o.id}')" class="card-order bg-white p-5 rounded-2xl shadow-sm border border-slate-200 flex items-center justify-between cursor-pointer mb-3 fade-in">
-                    <div class="flex items-center gap-4">
-                        <div class="w-12 h-12 rounded-full bg-slate-100 flex items-center justify-center font-bold text-slate-600 text-lg border border-slate-200">
-                            ${o.customer ? o.customer.charAt(0).toUpperCase() : '?'}
-                        </div>
-                        <div>
-                            <div class="flex items-center gap-2 mb-1">
-                                <span class="font-mono text-[10px] text-slate-400 font-bold">${displayId}</span>
-                                <span class="status-badge ${badgeClass} flex items-center gap-1">
-                                    <i data-lucide="${badgeIcon}" class="w-3 h-3"></i> ${badgeText}
-                                </span>
-                            </div>
-                            <h3 class="font-bold text-slate-800 text-sm">${o.customer || 'Cliente'}</h3>
-                            <p class="text-xs text-slate-500 mt-0.5">${o.items ? o.items.length : 0} items • <span class="text-teal-600 font-bold">S/${parseFloat(o.total).toFixed(2)}</span></p>
-                        </div>
+                <div onclick="openOrder('${o.id}')" class="card-order bg-white p-5 rounded-2xl border border-slate-100 shadow-sm flex items-center gap-4 cursor-pointer relative overflow-hidden group">
+                    <div class="absolute left-0 top-0 bottom-0 w-1 ${o.status === 'shipped' ? 'bg-purple-500' : 'bg-blue-500'}"></div>
+                    <div class="w-12 h-12 rounded-full bg-slate-50 flex items-center justify-center font-bold text-slate-600 border border-slate-100 text-lg flex-shrink-0 group-active:scale-90 transition-transform">
+                        ${name.charAt(0).toUpperCase()}
                     </div>
-                    <i data-lucide="chevron-right" class="w-5 h-5 text-slate-300"></i>
+                    <div class="flex-1 min-w-0">
+                        <div class="flex justify-between items-start mb-0.5">
+                            <h3 class="font-bold text-slate-800 text-sm truncate">${name}</h3>
+                            <span class="text-[9px] font-bold px-1.5 py-0.5 rounded ${statusColor}">${statusText}</span>
+                        </div>
+                        <p class="text-xs text-slate-500 truncate"><i data-lucide="map-pin" class="w-3 h-3 inline text-teal-500"></i> ${district}</p>
+                        <p class="text-[10px] text-slate-400 mt-1 truncate">${address}</p>
+                    </div>
                 </div>`;
             }).join('');
             lucide.createIcons();
         }
 
-        // --- MODAL LOGIC ---
+        // --- MODAL & ACTIONS ---
         window.openOrder = (id) => {
             selectedOrder = activeOrders.find(o => o.id === id);
             if(!selectedOrder) return;
+            hasPhoto = false; document.getElementById('photo-text').innerText = "Adjuntar Foto de Entrega"; document.getElementById('btn-photo').className = "w-full border-2 border-dashed border-slate-300 text-slate-500 py-3 rounded-xl font-bold text-sm hover:border-teal-500 hover:text-teal-600 transition-colors flex items-center justify-center gap-2";
 
-            document.getElementById('d-id').innerText = selectedOrder.orderId || '#' + selectedOrder.id.slice(0,5);
-            document.getElementById('d-name').innerText = selectedOrder.customer;
+            const isNew = typeof selectedOrder.customer === 'object';
+            const data = {
+                name: isNew ? selectedOrder.customer.name : selectedOrder.customer,
+                address: isNew ? selectedOrder.customer.address : 'Dirección antigua',
+                ref: isNew ? selectedOrder.customer.ref : '',
+                district: isNew ? selectedOrder.customer.district : 'Lima',
+                city: isNew ? selectedOrder.customer.city : ''
+            };
+
+            document.getElementById('d-id').innerText = selectedOrder.orderId || '#'+selectedOrder.id.slice(0,5);
+            document.getElementById('d-name').innerText = data.name;
+            document.getElementById('d-dist').innerText = data.district;
+            document.getElementById('d-address').innerText = data.address;
+            document.getElementById('d-ref').innerText = data.ref;
             document.getElementById('d-total').innerText = parseFloat(selectedOrder.total).toFixed(2);
-            
-            document.getElementById('d-items').innerHTML = (selectedOrder.items || []).map(i => `
-                <div class="flex justify-between items-center border-b border-slate-200/50 pb-3 last:border-0 last:pb-0">
-                    <div class="flex items-center gap-3">
-                        <div class="w-10 h-10 rounded-lg bg-white border border-slate-200 flex items-center justify-center overflow-hidden">
-                            <img src="${i.imageUrl}" class="w-full h-full object-cover" onerror="this.src='https://via.placeholder.com/40'">
-                        </div>
-                        <div>
-                            <p class="font-bold text-slate-700 leading-tight text-xs">${i.name}</p>
-                            <p class="text-[10px] text-slate-400 mt-0.5">${i.category}</p>
-                        </div>
-                    </div>
-                </div>
-            `).join('');
+            document.getElementById('d-items').innerHTML = (selectedOrder.items||[]).map(i=>`<div class="flex justify-between text-xs text-slate-600"><span>${i.name}</span><span class="font-bold">S/${i.price}</span></div>`).join('');
 
+            // Mapa Integrado (Truco iframe)
+            const mapQ = encodeURIComponent(`${data.address}, ${data.district}, ${data.city}, Peru`);
+            document.getElementById('d-map-frame').src = `https://maps.google.com/maps?q=${mapQ}&t=&z=15&ie=UTF8&iwloc=&output=embed`;
+
+            document.getElementById('issue-menu').classList.add('translate-y-full');
             document.getElementById('modal-delivery').classList.remove('hidden');
-            lucide.createIcons();
         };
 
         window.closeModal = () => document.getElementById('modal-delivery').classList.add('hidden');
-
-        window.contactClient = (type) => {
+        window.openGPS = () => { if(!selectedOrder)return; const d=selectedOrder.customer; const q=encodeURIComponent(`${d.address}, ${d.district}, Peru`); window.open(`https://www.google.com/maps/dir/?api=1&destination=${q}`, '_blank'); };
+        
+        window.contact = (type) => {
             if(!selectedOrder) return;
-            // IMPORTANTE: En producción, usar el campo 'phone' real del pedido si existe
-            const phone = "51999999999"; 
-            if(type === 'wsp') {
-                const text = `Hola ${selectedOrder.customer}, soy del delivery de Coottyvision. Estoy en camino con tu pedido ${selectedOrder.orderId || ''}.`;
-                window.open(`https://wa.me/${phone}?text=${encodeURIComponent(text)}`, '_blank');
-            } else {
-                window.open(`tel:${phone}`);
-            }
+            let phone = (typeof selectedOrder.customer === 'object' ? selectedOrder.customer.phone : null);
+            if(!phone) return alert("Sin teléfono registrado.");
+            phone = phone.replace(/\s/g,'');
+            if(type==='wsp') window.open(`https://wa.me/51${phone}?text=${encodeURIComponent('Hola, estoy afuera con tu pedido de Coottyvision.')}`, '_blank');
+            else window.open(`tel:${phone}`);
         };
 
-        window.confirmDelivery = async () => {
-            if(!selectedOrder) return;
-            if(!confirm(`¿Confirmar entrega a ${selectedOrder.customer}?`)) return;
+        window.triggerCamera = () => document.getElementById('file-input').click();
+        window.photoTaken = () => { hasPhoto = true; const btn = document.getElementById('btn-photo'); btn.className = "w-full bg-teal-50 border-2 border-teal-200 text-teal-700 py-3 rounded-xl font-bold text-sm flex items-center justify-center gap-2"; document.getElementById('photo-text').innerText = "Foto Lista"; };
 
-            const btn = document.getElementById('btn-confirm');
-            const originalText = btn.innerHTML;
-            btn.innerHTML = `<i data-lucide="loader-2" class="w-6 h-6 animate-spin"></i> Procesando...`;
-            btn.disabled = true;
+        window.completeOrder = async () => {
+            if(!selectedOrder) return;
+            if(!hasPhoto && !confirm("¿Confirmar sin foto de evidencia?")) return;
             
+            const btn = document.getElementById('btn-complete');
+            const original = btn.innerHTML;
+            btn.innerHTML = "Procesando..."; btn.disabled = true;
+
             try {
-                await updateDoc(doc(db, 'orders', selectedOrder.id), {
-                    status: 'completed',
-                    deliveredAt: new Date().toISOString()
-                });
+                await updateDoc(doc(db, 'orders', selectedOrder.id), { status: 'completed', deliveredAt: new Date().toISOString(), hasEvidence: hasPhoto });
                 closeModal();
-                // No necesitamos recargar, onSnapshot actualizará la lista
-            } catch(e) {
-                alert("Error al actualizar. Revisa tu conexión.");
-                console.error(e);
-            } finally {
-                btn.innerHTML = originalText;
-                btn.disabled = false;
-                lucide.createIcons();
-            }
+            } catch(e) { alert("Error de red"); } finally { btn.innerHTML = original; btn.disabled = false; }
         };
 
-        // Init icons on load
+        window.toggleIssueMenu = () => document.getElementById('issue-menu').classList.toggle('translate-y-full');
+        window.reportIssue = async (reason) => {
+            if(!confirm("¿Reportar incidencia y cancelar entrega?")) return;
+            try { await updateDoc(doc(db, 'orders', selectedOrder.id), { status: 'issue', issueReason: reason, issueAt: new Date().toISOString() }); closeModal(); } catch(e) { alert("Error"); }
+        };
+
         lucide.createIcons();
     </script>
 </body>
