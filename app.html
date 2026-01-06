@@ -1,0 +1,340 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Coottyvision Delivery</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;800&display=swap" rel="stylesheet">
+    <style>
+        body { font-family: 'Outfit', sans-serif; -webkit-tap-highlight-color: transparent; }
+        .app-container { max-width: 480px; margin: 0 auto; background-color: #f8fafc; min-height: 100vh; position: relative; }
+        .card-order { transition: transform 0.2s ease; }
+        .card-order:active { transform: scale(0.98); }
+        .btn-swipe { background: linear-gradient(135deg, #10b981 0%, #059669 100%); }
+        .slide-in { animation: slideUp 0.3s ease-out; }
+        @keyframes slideUp { from { transform: translateY(20px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
+        .status-badge { @apply px-2 py-0.5 rounded-md text-[10px] font-bold uppercase tracking-wider; }
+        .status-shipped { @apply bg-purple-100 text-purple-700 border border-purple-200; }
+        .status-processing { @apply bg-blue-100 text-blue-700 border border-blue-200; }
+        .no-scrollbar::-webkit-scrollbar { display: none; }
+        .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+        /* Loader */
+        .loader-spin { animation: spin 1s linear infinite; }
+        @keyframes spin { 100% { transform: rotate(360deg); } }
+    </style>
+</head>
+<body class="bg-slate-100 text-slate-800">
+
+    <div class="app-container shadow-2xl overflow-hidden flex flex-col relative">
+        
+        <!-- PANTALLA DE CARGA (NUEVO) -->
+        <div id="view-loading" class="fixed inset-0 z-[60] bg-slate-900 flex flex-col items-center justify-center app-container">
+            <div class="w-16 h-16 bg-teal-500/20 rounded-full flex items-center justify-center mb-4">
+                <i data-lucide="loader-2" class="w-8 h-8 text-teal-500 loader-spin"></i>
+            </div>
+            <p class="text-slate-400 text-sm font-medium animate-pulse">Conectando...</p>
+        </div>
+
+        <!-- 1. LOGIN SCREEN -->
+        <div id="view-login" class="fixed inset-0 z-50 bg-slate-900 flex flex-col items-center justify-center p-8 app-container hidden">
+            <div class="w-20 h-20 bg-teal-500 rounded-2xl flex items-center justify-center mb-6 shadow-xl shadow-teal-500/30">
+                <i data-lucide="truck" class="w-10 h-10 text-white"></i>
+            </div>
+            <h1 class="text-3xl font-bold text-white mb-1">Delivery App</h1>
+            <p class="text-slate-400 mb-8 text-sm">Acceso exclusivo repartidores</p>
+            
+            <form id="login-form" class="w-full space-y-4">
+                <input type="email" id="login-email" class="w-full bg-slate-800 border border-slate-700 rounded-xl px-4 py-4 text-white placeholder-slate-500 focus:ring-2 focus:ring-teal-500 outline-none transition-all" placeholder="repartidor@cootty.com">
+                <input type="password" id="login-pass" class="w-full bg-slate-800 border border-slate-700 rounded-xl px-4 py-4 text-white placeholder-slate-500 focus:ring-2 focus:ring-teal-500 outline-none transition-all" placeholder="••••••">
+                <button type="submit" class="w-full bg-teal-500 hover:bg-teal-600 text-white font-bold py-4 rounded-xl shadow-lg shadow-teal-500/20 active:scale-95 transition-transform">Ingresar</button>
+            </form>
+        </div>
+
+        <!-- 2. MAIN APP -->
+        <div id="view-app" class="hidden flex-1 flex flex-col h-full bg-slate-50">
+            
+            <!-- Header -->
+            <header class="bg-white px-6 py-4 flex justify-between items-center border-b border-slate-100 sticky top-0 z-10 shadow-sm">
+                <div>
+                    <h2 class="text-xl font-bold text-slate-800">Ruta de Hoy</h2>
+                    <p class="text-xs text-slate-500" id="pending-count">Sincronizando...</p>
+                </div>
+                <div class="w-10 h-10 rounded-full bg-slate-100 flex items-center justify-center border border-slate-200">
+                    <i data-lucide="user" class="w-5 h-5 text-slate-600"></i>
+                </div>
+            </header>
+
+            <!-- Tabs -->
+            <div class="px-4 py-3 flex gap-2 overflow-x-auto no-scrollbar bg-white border-b border-slate-50">
+                <button onclick="filterList('all')" id="tab-all" class="flex-1 bg-slate-900 text-white py-2 px-4 rounded-lg text-xs font-bold shadow-md transition-colors">Todos</button>
+                <button onclick="filterList('shipped')" id="tab-shipped" class="flex-1 bg-white text-slate-500 border border-slate-200 py-2 px-4 rounded-lg text-xs font-bold hover:bg-slate-50 transition-colors">En Ruta</button>
+                <button onclick="filterList('processing')" id="tab-processing" class="flex-1 bg-white text-slate-500 border border-slate-200 py-2 px-4 rounded-lg text-xs font-bold hover:bg-slate-50 transition-colors">En Taller</button>
+            </div>
+
+            <!-- Orders List -->
+            <div id="orders-container" class="flex-1 overflow-y-auto p-4 space-y-4 pb-24 no-scrollbar">
+                <!-- Estado Inicial -->
+                <div class="flex flex-col items-center justify-center h-40 text-slate-400">
+                    <i data-lucide="loader-2" class="w-6 h-6 animate-spin mb-2"></i>
+                    <p class="text-xs">Buscando pedidos...</p>
+                </div>
+            </div>
+
+            <!-- Bottom Nav -->
+            <nav class="bg-white border-t border-slate-200 px-8 py-3 flex justify-between items-center absolute bottom-0 w-full shadow-[0_-5px_15px_rgba(0,0,0,0.05)]">
+                <button class="flex flex-col items-center gap-1 text-teal-600">
+                    <i data-lucide="map" class="w-6 h-6"></i>
+                    <span class="text-[10px] font-bold">Ruta</span>
+                </button>
+                <button onclick="window.location.reload()" class="bg-slate-900 p-4 rounded-full -mt-10 shadow-xl border-4 border-slate-50 text-white active:scale-90 transition-transform hover:bg-slate-800">
+                    <i data-lucide="refresh-cw" class="w-6 h-6"></i>
+                </button>
+                <button onclick="logout()" class="flex flex-col items-center gap-1 text-slate-400 hover:text-red-500 transition-colors">
+                    <i data-lucide="log-out" class="w-6 h-6"></i>
+                    <span class="text-[10px] font-bold">Salir</span>
+                </button>
+            </nav>
+        </div>
+
+        <!-- 3. DELIVERY MODAL -->
+        <div id="modal-delivery" class="fixed inset-0 z-50 hidden bg-slate-900/90 backdrop-blur-sm flex items-end sm:items-center justify-center">
+            <div class="bg-white w-full max-w-md rounded-t-3xl sm:rounded-3xl p-6 relative animate-slide-up shadow-2xl">
+                <button onclick="closeModal()" class="absolute top-4 right-4 p-2 bg-slate-100 rounded-full hover:bg-slate-200 transition-colors"><i data-lucide="x" class="w-5 h-5 text-slate-500"></i></button>
+                
+                <div class="text-center mb-6 pt-2">
+                    <span id="d-id" class="text-xs font-mono bg-slate-100 px-2 py-1 rounded text-slate-500 font-bold">#00000</span>
+                    <h3 id="d-name" class="text-2xl font-bold text-slate-800 mt-3 mb-1">Cliente</h3>
+                    <p class="text-teal-600 font-bold text-xl">S/<span id="d-total">0.00</span></p>
+                </div>
+
+                <div class="bg-slate-50 rounded-2xl p-5 mb-6 border border-slate-100">
+                    <h4 class="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-3">Detalle del Pedido</h4>
+                    <div id="d-items" class="space-y-3 text-sm max-h-40 overflow-y-auto pr-1"></div>
+                </div>
+
+                <div class="grid grid-cols-2 gap-3 mb-4">
+                    <button onclick="contactClient('wsp')" class="flex items-center justify-center gap-2 bg-green-100 hover:bg-green-200 text-green-700 py-3.5 rounded-xl font-bold active:scale-95 transition-all">
+                        <i data-lucide="message-circle" class="w-5 h-5"></i> WhatsApp
+                    </button>
+                    <button onclick="contactClient('call')" class="flex items-center justify-center gap-2 bg-blue-100 hover:bg-blue-200 text-blue-700 py-3.5 rounded-xl font-bold active:scale-95 transition-all">
+                        <i data-lucide="phone" class="w-5 h-5"></i> Llamar
+                    </button>
+                </div>
+
+                <button onclick="confirmDelivery()" id="btn-confirm" class="w-full btn-swipe text-white py-4 rounded-xl font-bold text-lg shadow-lg shadow-green-500/30 flex items-center justify-center gap-2 active:scale-95 transition-all">
+                    <i data-lucide="check-circle" class="w-6 h-6"></i> Confirmar Entrega
+                </button>
+            </div>
+        </div>
+
+    </div>
+
+    <!-- Scripts -->
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
+        import { getAuth, signInWithEmailAndPassword, signOut, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
+        import { getFirestore, collection, onSnapshot, doc, updateDoc } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+
+        // TUS CREDENCIALES
+        const firebaseConfig = {
+            apiKey: "AIzaSyCWCM5aXMS8OgcJ5vEES6WV17Hhymfngyw",
+            authDomain: "coottyvision-hd.firebaseapp.com",
+            projectId: "coottyvision-hd",
+            storageBucket: "coottyvision-hd.firebasestorage.app",
+            messagingSenderId: "204138808996",
+            appId: "1:204138808996:web:ff65a968cd5853d52e0831"
+        };
+
+        const app = initializeApp(firebaseConfig);
+        const auth = getAuth(app);
+        const db = getFirestore(app);
+
+        let activeOrders = [];
+        let currentFilter = 'all';
+        let selectedOrder = null;
+
+        // --- AUTH LOGIC (ROBUSTO) ---
+        onAuthStateChanged(auth, user => {
+            // Ocultar loader siempre que haya respuesta de Auth
+            document.getElementById('view-loading').classList.add('hidden');
+            
+            if(user) {
+                document.getElementById('view-login').classList.add('hidden');
+                document.getElementById('view-app').classList.remove('hidden');
+                initOrdersListener();
+            } else {
+                document.getElementById('view-login').classList.remove('hidden');
+                document.getElementById('view-app').classList.add('hidden');
+            }
+        });
+
+        document.getElementById('login-form').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const btn = e.target.querySelector('button');
+            const originalText = btn.innerText;
+            btn.innerText = "Entrando..."; btn.disabled = true;
+            
+            try { 
+                await signInWithEmailAndPassword(auth, document.getElementById('login-email').value, document.getElementById('login-pass').value); 
+            } catch(e) { 
+                alert("Error: Revisa tu correo o contraseña");
+                btn.innerText = originalText; btn.disabled = false;
+            }
+        });
+
+        window.logout = () => signOut(auth);
+
+        // --- DATA LOGIC ---
+        function initOrdersListener() {
+            // Escuchar pedidos en tiempo real
+            onSnapshot(collection(db, 'orders'), (snapshot) => {
+                const all = snapshot.docs.map(d => ({id: d.id, ...d.data()}));
+                // Filtrar solo los relevantes para el repartidor
+                activeOrders = all.filter(o => o.status === 'processing' || o.status === 'shipped');
+                // Re-aplicar filtro actual
+                window.filterList(currentFilter);
+            }, (error) => {
+                console.error("Error BD:", error);
+                document.getElementById('orders-container').innerHTML = `<div class="flex flex-col items-center justify-center h-64 text-red-400"><i data-lucide="wifi-off" class="w-8 h-8 mb-2"></i><p class="text-xs">Error de conexión</p></div>`;
+                lucide.createIcons();
+            });
+        }
+
+        window.filterList = (filter) => {
+            currentFilter = filter;
+            
+            // Actualizar botones visualmente
+            ['all', 'shipped', 'processing'].forEach(f => {
+                const btn = document.getElementById(`tab-${f}`);
+                if(f === filter) {
+                    btn.className = "flex-1 bg-slate-900 text-white py-2 px-4 rounded-lg text-xs font-bold shadow-md transition-colors";
+                } else {
+                    btn.className = "flex-1 bg-white text-slate-500 border border-slate-200 py-2 px-4 rounded-lg text-xs font-bold hover:bg-slate-50 transition-colors";
+                }
+            });
+
+            const filtered = filter === 'all' ? activeOrders : activeOrders.filter(o => o.status === filter);
+            renderList(filtered);
+        };
+
+        function renderList(orders) {
+            const container = document.getElementById('orders-container');
+            document.getElementById('pending-count').innerText = `${orders.length} Entregas activas`;
+            
+            if(orders.length === 0) {
+                container.innerHTML = `
+                    <div class="flex flex-col items-center justify-center h-full text-slate-400 mt-20 fade-in">
+                        <div class="bg-white p-4 rounded-full shadow-sm mb-4 border border-slate-100">
+                            <i data-lucide="check-circle" class="w-10 h-10 text-green-500"></i>
+                        </div>
+                        <p class="text-sm font-bold text-slate-600">¡Todo listo!</p>
+                        <p class="text-xs">No hay pedidos pendientes en esta categoría.</p>
+                    </div>`;
+                lucide.createIcons();
+                return;
+            }
+
+            container.innerHTML = orders.map(o => {
+                const isShipped = o.status === 'shipped';
+                const badgeClass = isShipped ? 'status-shipped' : 'status-processing';
+                const badgeIcon = isShipped ? 'truck' : 'package';
+                const badgeText = isShipped ? 'En Ruta' : 'En Taller';
+                const displayId = o.orderId || '#' + o.id.slice(0,5).toUpperCase();
+
+                return `
+                <div onclick="openOrder('${o.id}')" class="card-order bg-white p-5 rounded-2xl shadow-sm border border-slate-200 flex items-center justify-between cursor-pointer mb-3 fade-in">
+                    <div class="flex items-center gap-4">
+                        <div class="w-12 h-12 rounded-full bg-slate-100 flex items-center justify-center font-bold text-slate-600 text-lg border border-slate-200">
+                            ${o.customer ? o.customer.charAt(0).toUpperCase() : '?'}
+                        </div>
+                        <div>
+                            <div class="flex items-center gap-2 mb-1">
+                                <span class="font-mono text-[10px] text-slate-400 font-bold">${displayId}</span>
+                                <span class="status-badge ${badgeClass} flex items-center gap-1">
+                                    <i data-lucide="${badgeIcon}" class="w-3 h-3"></i> ${badgeText}
+                                </span>
+                            </div>
+                            <h3 class="font-bold text-slate-800 text-sm">${o.customer || 'Cliente'}</h3>
+                            <p class="text-xs text-slate-500 mt-0.5">${o.items ? o.items.length : 0} items • <span class="text-teal-600 font-bold">S/${parseFloat(o.total).toFixed(2)}</span></p>
+                        </div>
+                    </div>
+                    <i data-lucide="chevron-right" class="w-5 h-5 text-slate-300"></i>
+                </div>`;
+            }).join('');
+            lucide.createIcons();
+        }
+
+        // --- MODAL LOGIC ---
+        window.openOrder = (id) => {
+            selectedOrder = activeOrders.find(o => o.id === id);
+            if(!selectedOrder) return;
+
+            document.getElementById('d-id').innerText = selectedOrder.orderId || '#' + selectedOrder.id.slice(0,5);
+            document.getElementById('d-name').innerText = selectedOrder.customer;
+            document.getElementById('d-total').innerText = parseFloat(selectedOrder.total).toFixed(2);
+            
+            document.getElementById('d-items').innerHTML = (selectedOrder.items || []).map(i => `
+                <div class="flex justify-between items-center border-b border-slate-200/50 pb-3 last:border-0 last:pb-0">
+                    <div class="flex items-center gap-3">
+                        <div class="w-10 h-10 rounded-lg bg-white border border-slate-200 flex items-center justify-center overflow-hidden">
+                            <img src="${i.imageUrl}" class="w-full h-full object-cover" onerror="this.src='https://via.placeholder.com/40'">
+                        </div>
+                        <div>
+                            <p class="font-bold text-slate-700 leading-tight text-xs">${i.name}</p>
+                            <p class="text-[10px] text-slate-400 mt-0.5">${i.category}</p>
+                        </div>
+                    </div>
+                </div>
+            `).join('');
+
+            document.getElementById('modal-delivery').classList.remove('hidden');
+            lucide.createIcons();
+        };
+
+        window.closeModal = () => document.getElementById('modal-delivery').classList.add('hidden');
+
+        window.contactClient = (type) => {
+            if(!selectedOrder) return;
+            // IMPORTANTE: En producción, usar el campo 'phone' real del pedido si existe
+            const phone = "51999999999"; 
+            if(type === 'wsp') {
+                const text = `Hola ${selectedOrder.customer}, soy del delivery de Coottyvision. Estoy en camino con tu pedido ${selectedOrder.orderId || ''}.`;
+                window.open(`https://wa.me/${phone}?text=${encodeURIComponent(text)}`, '_blank');
+            } else {
+                window.open(`tel:${phone}`);
+            }
+        };
+
+        window.confirmDelivery = async () => {
+            if(!selectedOrder) return;
+            if(!confirm(`¿Confirmar entrega a ${selectedOrder.customer}?`)) return;
+
+            const btn = document.getElementById('btn-confirm');
+            const originalText = btn.innerHTML;
+            btn.innerHTML = `<i data-lucide="loader-2" class="w-6 h-6 animate-spin"></i> Procesando...`;
+            btn.disabled = true;
+            
+            try {
+                await updateDoc(doc(db, 'orders', selectedOrder.id), {
+                    status: 'completed',
+                    deliveredAt: new Date().toISOString()
+                });
+                closeModal();
+                // No necesitamos recargar, onSnapshot actualizará la lista
+            } catch(e) {
+                alert("Error al actualizar. Revisa tu conexión.");
+                console.error(e);
+            } finally {
+                btn.innerHTML = originalText;
+                btn.disabled = false;
+                lucide.createIcons();
+            }
+        };
+
+        // Init icons on load
+        lucide.createIcons();
+    </script>
+</body>
+</html>
